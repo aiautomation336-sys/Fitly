@@ -1,50 +1,31 @@
-# Welcome to your Expo app 👋
+# Fitly (Body ID) — MVP
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Мобильное приложение с рекомендацией размера одежды по профилю тела пользователя ("Body ID").
+Полное ТЗ и история решений — в [`../FITLY_TZ.md`](../FITLY_TZ.md).
 
-## Get started
+## Запуск
 
-1. Install dependencies
+1. Установи зависимости:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Скопируй `.env.example` в `.env` и заполни ключами своего Supabase-проекта:
 
    ```bash
-    npx expo start
+   cp .env.example .env
    ```
 
-In the output, you'll find options to open the app in a
+3. Запусти приложение:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```bash
+   npx expo start
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Открой в Expo Go на телефоне (отсканировать QR) или в эмуляторе.
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Стек
+- React Native + Expo Router, TypeScript
+- Supabase (auth, Postgres) — клиент в `lib/supabase.ts`
+- MediaPipe Pose (добавится на этапе фото-скана) — см. `FITLY_TZ.md`, Этап 4
