@@ -117,6 +117,9 @@ export default function Profile() {
           <Text style={styles.link}>Привязать email, чтобы не потерять данные при смене телефона</Text>
         </Pressable>
       )}
+      <Pressable onPress={() => router.push('/login')}>
+        <Text style={styles.link}>Войти под другим аккаунтом</Text>
+      </Pressable>
     </ScrollView>
   );
 }
