@@ -34,7 +34,7 @@ yarn-error.*
 .env*.local
 
 # scratch files
-expo-qr.png
+expo-qr*.png
 
 # typescript
 *.tsbuildinfo
