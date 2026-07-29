@@ -25,3 +25,16 @@ export async function updateProfile(id: string, values: ProfileMeasurements): Pr
     .eq('id', id);
   if (error) throw error;
 }
+
+export async function createProfile(
+  userId: string,
+  values: ProfileMeasurements
+): Promise<BodyProfileRow> {
+  const { data, error } = await supabase
+    .from('body_profiles')
+    .insert({ user_id: userId, ...values })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}

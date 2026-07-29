@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
 import { BodyMeasurementsForm } from '@/components/BodyMeasurementsForm';
 import { ensureSession } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { createProfile } from '@/lib/bodyProfiles';
 
 export default function ManualInput() {
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -20,8 +20,7 @@ export default function ManualInput() {
     setSubmitError(null);
     try {
       const session = await ensureSession();
-      const { error } = await supabase.from('body_profiles').insert({
-        user_id: session.user.id,
+      const profile = await createProfile(session.user.id, {
         height_cm: values.heightCm,
         weight_kg: values.weightKg,
         chest_cm: values.chestCm,
@@ -29,10 +28,10 @@ export default function ManualInput() {
         hips_cm: values.hipsCm,
         input_method: 'manual',
       });
-      if (error) throw error;
       router.replace({
         pathname: '/onboarding/result',
         params: {
+          profileId: profile.id,
           chestCm: String(values.chestCm),
           waistCm: String(values.waistCm),
           hipsCm: String(values.hipsCm),

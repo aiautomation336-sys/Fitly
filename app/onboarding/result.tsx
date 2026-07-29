@@ -1,11 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BodySilhouette } from '@/components/BodySilhouette';
+import { BrandSizeFeedbackRow } from '@/components/BrandSizeFeedbackRow';
 import { allBrandSizes } from '@/lib/brandSizeCharts';
 import { sizeExplanation } from '@/lib/sizeFormula';
 
 export default function Result() {
-  const { chestCm, waistCm, hipsCm } = useLocalSearchParams<{
+  const { profileId, chestCm, waistCm, hipsCm } = useLocalSearchParams<{
+    profileId: string;
     chestCm: string;
     waistCm: string;
     hipsCm: string;
@@ -23,12 +25,15 @@ export default function Result() {
       <BodySilhouette chestCm={chest} waistCm={waist} hipsCm={hips} />
 
       <Text style={styles.sectionTitle}>Размер по брендам</Text>
+      <Text style={styles.hint}>Отметь 👍/👎, если уже носишь эту марку — поможет уточнить формулу</Text>
       <View style={styles.brandList}>
         {allBrandSizes(chest).map((item) => (
-          <View key={item.brand} style={styles.brandRow}>
-            <Text style={styles.brandName}>{item.brand}</Text>
-            <Text style={styles.brandSize}>{item.size}</Text>
-          </View>
+          <BrandSizeFeedbackRow
+            key={item.brand}
+            brand={item.brand}
+            size={item.size}
+            bodyProfileId={profileId}
+          />
         ))}
       </View>
 
@@ -61,25 +66,15 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 8,
   },
+  hint: {
+    fontSize: 12,
+    color: '#888',
+    alignSelf: 'flex-start',
+    marginTop: -12,
+  },
   brandList: {
     width: '100%',
     gap: 8,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingVertical: 10,
-    width: '100%',
-  },
-  brandName: {
-    fontSize: 15,
-    color: '#444',
-  },
-  brandSize: {
-    fontSize: 15,
-    fontWeight: '700',
   },
   button: {
     backgroundColor: '#111',

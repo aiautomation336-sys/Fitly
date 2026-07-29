@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { ensureSession } from '@/lib/auth';
+import { createProfile } from '@/lib/bodyProfiles';
 import { BodyMeasurements, measurementsFromLandmarks, NormalizedLandmark } from '@/lib/poseMeasurement';
 import { buildPoseHtml } from '@/lib/poseWebViewHtml';
-import { supabase } from '@/lib/supabase';
 
 type Step = 'input' | 'processing' | 'review';
 
@@ -108,8 +108,7 @@ export default function PhotoScan() {
     setScanError(null);
     try {
       const session = await ensureSession();
-      const { error } = await supabase.from('body_profiles').insert({
-        user_id: session.user.id,
+      const profile = await createProfile(session.user.id, {
         height_cm: height,
         weight_kg: weight,
         chest_cm: measurements.chestCm,
@@ -117,10 +116,10 @@ export default function PhotoScan() {
         hips_cm: measurements.hipsCm,
         input_method: 'photo',
       });
-      if (error) throw error;
       router.replace({
         pathname: '/onboarding/result',
         params: {
+          profileId: profile.id,
           chestCm: String(measurements.chestCm),
           waistCm: String(measurements.waistCm),
           hipsCm: String(measurements.hipsCm),
