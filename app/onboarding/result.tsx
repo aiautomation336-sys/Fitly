@@ -1,7 +1,9 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { BodySilhouette } from '@/components/BodySilhouette';
+import { BodyAvatar } from '@/components/BodyAvatar';
 import { BrandSizeFeedbackRow } from '@/components/BrandSizeFeedbackRow';
+import { getProfileById } from '@/lib/bodyProfiles';
 import { allBrandSizes } from '@/lib/brandSizeCharts';
 import { sizeExplanation } from '@/lib/sizeFormula';
 
@@ -16,13 +18,36 @@ export default function Result() {
   const chest = Number(chestCm);
   const waist = Number(waistCm);
   const hips = Number(hipsCm);
+  const [avatarPath, setAvatarPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    getProfileById(profileId)
+      .then((profile) => setAvatarPath(profile?.avatar_path ?? null))
+      .catch(() => setAvatarPath(null));
+  }, [profileId]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Твой Body ID готов ✅</Text>
+
+      <BodyAvatar avatarPath={avatarPath} />
+
       <Text style={styles.explanation}>{sizeExplanation(chest)}</Text>
 
-      <BodySilhouette chestCm={chest} waistCm={waist} hipsCm={hips} />
+      <View style={styles.paramsList}>
+        <View style={styles.paramRow}>
+          <Text style={styles.paramLabel}>Грудь</Text>
+          <Text style={styles.paramValue}>{chest} см</Text>
+        </View>
+        <View style={styles.paramRow}>
+          <Text style={styles.paramLabel}>Талия</Text>
+          <Text style={styles.paramValue}>{waist} см</Text>
+        </View>
+        <View style={styles.paramRow}>
+          <Text style={styles.paramLabel}>Бёдра</Text>
+          <Text style={styles.paramValue}>{hips} см</Text>
+        </View>
+      </View>
 
       <Text style={styles.sectionTitle}>Размер по брендам</Text>
       <Text style={styles.hint}>Отметь 👍/👎, если уже носишь эту марку — поможет уточнить формулу</Text>
@@ -59,6 +84,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     color: '#333',
+  },
+  paramsList: {
+    width: '100%',
+    gap: 6,
+  },
+  paramRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  paramLabel: {
+    fontSize: 15,
+    color: '#444',
+  },
+  paramValue: {
+    fontSize: 15,
+    fontWeight: '600',
   },
   sectionTitle: {
     fontSize: 18,

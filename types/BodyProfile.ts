@@ -9,5 +9,6 @@ export type BodyProfileRow = {
   waist_cm: number;
   hips_cm: number;
   input_method: InputMethod;
+  avatar_path: string | null;
   updated_at: string;
 };

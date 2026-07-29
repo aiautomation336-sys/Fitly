@@ -14,6 +14,7 @@ import {
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { PoseGuideOverlay } from '@/components/PoseGuideOverlay';
 import { ensureSession } from '@/lib/auth';
+import { uploadAvatarPhoto } from '@/lib/avatarStorage';
 import { createProfile, updateProfile } from '@/lib/bodyProfiles';
 import { errorMessage } from '@/lib/errorMessage';
 import { BodyMeasurements, measurementsFromLandmarks, NormalizedLandmark } from '@/lib/poseMeasurement';
@@ -166,6 +167,13 @@ export default function PhotoScan() {
     setSaving(true);
     setScanError(null);
     try {
+      const session = await ensureSession();
+      let avatarPath: string | null = null;
+      if (photoDataUri) {
+        const base64 = photoDataUri.split(',')[1];
+        avatarPath = await uploadAvatarPhoto(session.user.id, base64);
+      }
+
       if (editProfileId) {
         await updateProfile(editProfileId, {
           height_cm: height,
@@ -174,12 +182,12 @@ export default function PhotoScan() {
           waist_cm: measurements.waistCm,
           hips_cm: measurements.hipsCm,
           input_method: 'photo',
+          avatar_path: avatarPath,
         });
         router.replace('/profile');
         return;
       }
 
-      const session = await ensureSession();
       const profile = await createProfile(session.user.id, {
         height_cm: height,
         weight_kg: weight,
@@ -187,6 +195,7 @@ export default function PhotoScan() {
         waist_cm: measurements.waistCm,
         hips_cm: measurements.hipsCm,
         input_method: 'photo',
+        avatar_path: avatarPath,
       });
       router.replace({
         pathname: '/onboarding/result',

@@ -22,7 +22,8 @@ export async function getProfileById(id: string): Promise<BodyProfileRow | null>
 export type ProfileMeasurements = Pick<
   BodyProfileRow,
   'height_cm' | 'weight_kg' | 'chest_cm' | 'waist_cm' | 'hips_cm' | 'input_method'
->;
+> &
+  Partial<Pick<BodyProfileRow, 'avatar_path'>>;
 
 export async function updateProfile(id: string, values: ProfileMeasurements): Promise<void> {
   const { error } = await supabase

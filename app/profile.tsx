@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { BodySilhouette } from '@/components/BodySilhouette';
+import { BodyAvatar } from '@/components/BodyAvatar';
 import { BrandSizeFeedbackRow } from '@/components/BrandSizeFeedbackRow';
 import { ensureSession } from '@/lib/auth';
 import { getLatestProfile } from '@/lib/bodyProfiles';
@@ -76,6 +76,8 @@ export default function Profile() {
         {INPUT_METHOD_LABEL[profile.input_method]}
       </Text>
 
+      <BodyAvatar avatarPath={profile.avatar_path} />
+
       <View style={styles.paramsList}>
         <View style={styles.paramRow}>
           <Text style={styles.paramLabel}>Рост</Text>
@@ -85,11 +87,21 @@ export default function Profile() {
           <Text style={styles.paramLabel}>Вес</Text>
           <Text style={styles.paramValue}>{profile.weight_kg} кг</Text>
         </View>
+        <View style={styles.paramRow}>
+          <Text style={styles.paramLabel}>Грудь</Text>
+          <Text style={styles.paramValue}>{profile.chest_cm} см</Text>
+        </View>
+        <View style={styles.paramRow}>
+          <Text style={styles.paramLabel}>Талия</Text>
+          <Text style={styles.paramValue}>{profile.waist_cm} см</Text>
+        </View>
+        <View style={styles.paramRow}>
+          <Text style={styles.paramLabel}>Бёдра</Text>
+          <Text style={styles.paramValue}>{profile.hips_cm} см</Text>
+        </View>
       </View>
 
       <Text style={styles.explanation}>{sizeExplanation(profile.chest_cm)}</Text>
-
-      <BodySilhouette chestCm={profile.chest_cm} waistCm={profile.waist_cm} hipsCm={profile.hips_cm} />
 
       <Text style={styles.sectionTitle}>Размер по брендам</Text>
       <View style={styles.brandList}>
