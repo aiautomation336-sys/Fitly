@@ -1,7 +1,7 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -41,7 +41,21 @@ export default function PhotoScan() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<CameraType>('back');
+  const [timerSeconds, setTimerSeconds] = useState<0 | 3 | 5 | 10>(5);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const cameraRef = useRef<CameraView>(null);
+
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) {
+      setCountdown(null);
+      capturePhoto();
+      return;
+    }
+    const timeout = setTimeout(() => setCountdown((prev) => (prev !== null ? prev - 1 : null)), 1000);
+    return () => clearTimeout(timeout);
+  }, [countdown]);
 
   function validateFields(): { height: number; weight: number } | null {
     setFieldError(null);
@@ -68,6 +82,18 @@ export default function PhotoScan() {
       }
     }
     setStep('camera');
+  }
+
+  function handleShutterPress() {
+    if (timerSeconds === 0) {
+      capturePhoto();
+      return;
+    }
+    setCountdown(timerSeconds);
+  }
+
+  function cycleTimer() {
+    setTimerSeconds((prev) => (prev === 0 ? 3 : prev === 3 ? 5 : prev === 5 ? 10 : 0));
   }
 
   async function capturePhoto() {
@@ -180,17 +206,41 @@ export default function PhotoScan() {
   if (step === 'camera') {
     return (
       <View style={styles.cameraContainer}>
-        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back">
+        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={facing}>
           <PoseGuideOverlay />
-          <Pressable onPress={() => setStep('input')} hitSlop={8} style={styles.cameraCancelArea}>
-            <Text style={styles.cameraCancel}>Отмена</Text>
-          </Pressable>
+
+          <View style={styles.cameraTopBar}>
+            <Pressable onPress={() => setStep('input')} hitSlop={8}>
+              <Text style={styles.cameraCancel}>Отмена</Text>
+            </Pressable>
+            <View style={styles.cameraTopBarRight}>
+              <Pressable onPress={cycleTimer} hitSlop={8} style={styles.cameraTopButton}>
+                <Text style={styles.cameraTopButtonText}>
+                  ⏱ {timerSeconds === 0 ? 'выкл' : `${timerSeconds}с`}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setFacing((prev) => (prev === 'back' ? 'front' : 'back'))}
+                hitSlop={8}
+                style={styles.cameraTopButton}
+              >
+                <Text style={styles.cameraTopButtonText}>🔄</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {countdown !== null && (
+            <View style={styles.countdownOverlay}>
+              <Text style={styles.countdownText}>{countdown}</Text>
+            </View>
+          )}
+
           <View style={styles.cameraOverlayUi}>
             <Text style={styles.cameraHint}>
               Встань в полный рост, совместив силуэт с подсказкой. Руки слегка в стороны и вниз —
               не поднимай до уровня плеч.
             </Text>
-            <Pressable style={styles.shutterButton} onPress={capturePhoto} />
+            <Pressable style={styles.shutterButton} onPress={handleShutterPress} />
           </View>
         </CameraView>
       </View>
@@ -419,14 +469,45 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 8,
   },
-  cameraCancelArea: {
+  cameraTopBar: {
     position: 'absolute',
     top: 48,
     left: 24,
+    right: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cameraTopBarRight: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cameraTopButton: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  cameraTopButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   cameraCancel: {
     color: '#fff',
     fontSize: 15,
+  },
+  countdownOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countdownText: {
+    color: '#fff',
+    fontSize: 96,
+    fontWeight: '800',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowRadius: 12,
   },
   shutterButton: {
     width: 68,
