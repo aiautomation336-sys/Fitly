@@ -4,6 +4,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text } from 'reac
 import { BodyMeasurementsForm } from '@/components/BodyMeasurementsForm';
 import { ensureSession } from '@/lib/auth';
 import { createProfile, getProfileById, updateProfile } from '@/lib/bodyProfiles';
+import { errorMessage } from '@/lib/errorMessage';
 
 export default function ManualInput() {
   const { editProfileId } = useLocalSearchParams<{ editProfileId?: string }>();
@@ -27,7 +28,7 @@ export default function ManualInput() {
           hipsCm: String(profile.hips_cm),
         });
       })
-      .catch((err) => setSubmitError(err instanceof Error ? err.message : String(err)))
+      .catch((err) => setSubmitError(errorMessage(err)))
       .finally(() => setLoadingInitial(false));
   }, [editProfileId]);
 
@@ -73,7 +74,7 @@ export default function ManualInput() {
         },
       });
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : String(err));
+      setSubmitError(errorMessage(err));
     } finally {
       setSubmitting(false);
     }

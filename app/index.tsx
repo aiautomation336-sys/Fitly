@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ensureSession } from '@/lib/auth';
 import { getLatestProfile } from '@/lib/bodyProfiles';
+import { errorMessage } from '@/lib/errorMessage';
 import { supabase } from '@/lib/supabase';
 
 type Screen = 'loading' | 'welcomeChoice' | 'error';
@@ -25,7 +26,7 @@ export default function Home() {
   }, []);
 
   function showError(err: unknown) {
-    setError(err instanceof Error ? err.message : String(err));
+    setError(errorMessage(err));
     setScreen('error');
   }
 

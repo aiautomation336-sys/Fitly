@@ -6,6 +6,7 @@ import { BrandSizeFeedbackRow } from '@/components/BrandSizeFeedbackRow';
 import { ensureSession } from '@/lib/auth';
 import { getLatestProfile } from '@/lib/bodyProfiles';
 import { allBrandSizes } from '@/lib/brandSizeCharts';
+import { errorMessage } from '@/lib/errorMessage';
 import { sizeExplanation } from '@/lib/sizeFormula';
 import { BodyProfileRow } from '@/types/BodyProfile';
 
@@ -29,11 +30,11 @@ export default function Profile() {
     setLoadError(null);
     try {
       const session = await ensureSession();
-      setIsAnonymous(session.user.is_anonymous ?? false);
+      setIsAnonymous(!session.user.email);
       const latest = await getLatestProfile(session.user.id);
       setProfile(latest);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : String(err));
+      setLoadError(errorMessage(err));
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { confirmLogin, requestLoginCode } from '@/lib/auth';
+import { errorMessage } from '@/lib/errorMessage';
 
 type Step = 'enterEmail' | 'enterCode';
 
@@ -23,7 +24,7 @@ export default function Login() {
       await requestLoginCode(email.trim());
       setStep('enterCode');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -40,7 +41,7 @@ export default function Login() {
       await confirmLogin(email.trim(), code.trim());
       router.replace('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     } finally {
       setSubmitting(false);
     }

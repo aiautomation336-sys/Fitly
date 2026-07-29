@@ -15,6 +15,7 @@ import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { PoseGuideOverlay } from '@/components/PoseGuideOverlay';
 import { ensureSession } from '@/lib/auth';
 import { createProfile, updateProfile } from '@/lib/bodyProfiles';
+import { errorMessage } from '@/lib/errorMessage';
 import { BodyMeasurements, measurementsFromLandmarks, NormalizedLandmark } from '@/lib/poseMeasurement';
 import { buildPoseHtml } from '@/lib/poseWebViewHtml';
 
@@ -152,7 +153,7 @@ export default function PhotoScan() {
       setMeasurements(result);
       setStep('review');
     } catch (err) {
-      setScanError(err instanceof Error ? err.message : String(err));
+      setScanError(errorMessage(err));
       setStep('input');
     }
   }
@@ -197,7 +198,7 @@ export default function PhotoScan() {
         },
       });
     } catch (err) {
-      setScanError(err instanceof Error ? err.message : String(err));
+      setScanError(errorMessage(err));
     } finally {
       setSaving(false);
     }

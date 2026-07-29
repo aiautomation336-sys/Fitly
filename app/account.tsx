@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { confirmEmailLink, ensureSession, requestEmailLink } from '@/lib/auth';
+import { errorMessage } from '@/lib/errorMessage';
 
 type Step = 'loading' | 'linked' | 'enterEmail' | 'enterCode';
 
@@ -16,14 +17,14 @@ export default function Account() {
   useEffect(() => {
     ensureSession()
       .then((session) => {
-        if (!session.user.is_anonymous && session.user.email) {
+        if (session.user.email) {
           setLinkedEmail(session.user.email);
           setStep('linked');
         } else {
           setStep('enterEmail');
         }
       })
-      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+      .catch((err) => setError(errorMessage(err)));
   }, []);
 
   async function handleSendCode() {
@@ -37,7 +38,7 @@ export default function Account() {
       await requestEmailLink(email.trim());
       setStep('enterCode');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -55,7 +56,7 @@ export default function Account() {
       setLinkedEmail(email.trim());
       setStep('linked');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(errorMessage(err));
     } finally {
       setSubmitting(false);
     }
