@@ -33,7 +33,19 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Fitly использует камеру для фото-скана тела и расчёта размера."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Fitly использует галерею, чтобы выбрать фото для фото-скана тела."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

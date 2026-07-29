@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { BodyMeasurementsForm } from '@/components/BodyMeasurementsForm';
 import { ensureSession } from '@/lib/auth';
 import { createProfile } from '@/lib/bodyProfiles';
@@ -46,6 +46,9 @@ export default function ManualInput() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Pressable onPress={() => router.replace('/onboarding/choose-method')} hitSlop={8} style={styles.backLink}>
+        <Text style={styles.link}>← Назад</Text>
+      </Pressable>
       <Text style={styles.title}>Твои параметры</Text>
       <BodyMeasurementsForm
         submitLabel="Сохранить"
@@ -69,5 +72,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  link: {
+    textAlign: 'center',
+    color: '#666',
+    textDecorationLine: 'underline',
+  },
+  backLink: {
+    alignSelf: 'flex-start',
   },
 });

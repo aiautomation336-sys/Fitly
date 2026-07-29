@@ -1,6 +1,7 @@
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -11,12 +12,13 @@ import {
   View,
 } from 'react-native';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import { PoseGuideOverlay } from '@/components/PoseGuideOverlay';
 import { ensureSession } from '@/lib/auth';
 import { createProfile } from '@/lib/bodyProfiles';
 import { BodyMeasurements, measurementsFromLandmarks, NormalizedLandmark } from '@/lib/poseMeasurement';
 import { buildPoseHtml } from '@/lib/poseWebViewHtml';
 
-type Step = 'input' | 'processing' | 'review';
+type Step = 'input' | 'camera' | 'processing' | 'review';
 
 type PoseResultMessage =
   | { type: 'result'; landmarks: NormalizedLandmark[]; imageWidth: number; imageHeight: number }
@@ -37,33 +39,62 @@ export default function PhotoScan() {
   const [measurements, setMeasurements] = useState<BodyMeasurements | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView>(null);
 
-  async function pickPhoto(source: 'camera' | 'library') {
+  function validateFields(): { height: number; weight: number } | null {
     setFieldError(null);
     const height = validateRange(heightCm, 100, 250);
     const weight = validateRange(weightKg, 30, 300);
-    if (height === null) return setFieldError('Введи рост от 100 до 250 см');
-    if (weight === null) return setFieldError('Введи вес от 30 до 300 кг');
+    if (height === null) {
+      setFieldError('Введи рост от 100 до 250 см');
+      return null;
+    }
+    if (weight === null) {
+      setFieldError('Введи вес от 30 до 300 кг');
+      return null;
+    }
+    return { height, weight };
+  }
 
-    const permission =
-      source === 'camera'
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  async function openCamera() {
+    if (!validateFields()) return;
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission();
+      if (!result.granted) {
+        setFieldError('Нужен доступ к камере, чтобы сделать фото-скан.');
+        return;
+      }
+    }
+    setStep('camera');
+  }
+
+  async function capturePhoto() {
+    if (!cameraRef.current) return;
+    const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.7 });
+    if (!photo?.base64) {
+      setFieldError('Не удалось сделать фото, попробуй ещё раз.');
+      setStep('input');
+      return;
+    }
+    setPhotoDataUri(`data:image/jpeg;base64,${photo.base64}`);
+    setStep('processing');
+  }
+
+  async function pickFromLibrary() {
+    if (!validateFields()) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setFieldError('Нужен доступ к камере/галерее, чтобы сделать фото-скан.');
+      setFieldError('Нужен доступ к галерее, чтобы выбрать фото.');
       return;
     }
 
-    const result =
-      source === 'camera'
-        ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7 })
-        : await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7 });
-
+    const result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7 });
     if (result.canceled || !result.assets[0]?.base64) return;
 
     const mimeType = result.assets[0].mimeType ?? 'image/jpeg';
-    const dataUri = `data:${mimeType};base64,${result.assets[0].base64}`;
-    setPhotoDataUri(dataUri);
+    setPhotoDataUri(`data:${mimeType};base64,${result.assets[0].base64}`);
     setStep('processing');
   }
 
@@ -132,9 +163,32 @@ export default function PhotoScan() {
     }
   }
 
+  if (step === 'camera') {
+    return (
+      <View style={styles.cameraContainer}>
+        <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back">
+          <PoseGuideOverlay />
+        </CameraView>
+        <Pressable onPress={() => setStep('input')} hitSlop={8} style={styles.cameraCancelArea}>
+          <Text style={styles.cameraCancel}>Отмена</Text>
+        </Pressable>
+        <View style={styles.cameraOverlayUi}>
+          <Text style={styles.cameraHint}>
+            Встань в полный рост, совместив силуэт с подсказкой. Руки слегка в стороны и вниз —
+            не поднимай до уровня плеч.
+          </Text>
+          <Pressable style={styles.shutterButton} onPress={capturePhoto} />
+        </View>
+      </View>
+    );
+  }
+
   if (step === 'review' && measurements) {
     return (
       <View style={styles.container}>
+        <Pressable onPress={() => setStep('input')} hitSlop={8} style={styles.backLink}>
+          <Text style={styles.link}>← Переснять фото</Text>
+        </Pressable>
         <Text style={styles.title}>Вот что получилось</Text>
         <Text style={styles.subtitle}>Приблизительно, по фото — можно уточнить позже вручную.</Text>
         <View style={styles.resultRow}>
@@ -162,6 +216,9 @@ export default function PhotoScan() {
       <View style={styles.container}>
         <ActivityIndicator size="large" />
         <Text style={styles.subtitle}>Распознаю позу на фото…</Text>
+        <Pressable onPress={() => setStep('input')} hitSlop={8}>
+          <Text style={styles.link}>Отмена</Text>
+        </Pressable>
         <View style={styles.hiddenWebView}>
           <WebView
             originWhitelist={['*']}
@@ -176,10 +233,14 @@ export default function PhotoScan() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Pressable onPress={() => router.replace('/onboarding/choose-method')} hitSlop={8} style={styles.backLink}>
+        <Text style={styles.link}>← Назад</Text>
+      </Pressable>
       <Text style={styles.title}>Фото-скан</Text>
       <Text style={styles.subtitle}>
-        Встань в полный рост анфас. Рост и вес пока вводим вручную — их нельзя определить по
-        одному фото без специальных датчиков.
+        Встань в полный рост анфас, в облегающей однотонной одежде — мешковатая одежда искажает
+        измерения. Рост и вес пока вводим вручную — их нельзя определить по одному фото без
+        специальных датчиков.
       </Text>
 
       <View style={styles.fieldGroup}>
@@ -205,10 +266,10 @@ export default function PhotoScan() {
 
       {(fieldError || scanError) && <Text style={styles.error}>{fieldError ?? scanError}</Text>}
 
-      <Pressable style={styles.button} onPress={() => pickPhoto('camera')}>
+      <Pressable style={styles.button} onPress={openCamera}>
         <Text style={styles.buttonText}>📷 Сделать фото</Text>
       </Pressable>
-      <Pressable style={styles.buttonSecondary} onPress={() => pickPhoto('library')}>
+      <Pressable style={styles.buttonSecondary} onPress={pickFromLibrary}>
         <Text style={styles.buttonSecondaryText}>Выбрать из галереи</Text>
       </Pressable>
       <Pressable onPress={() => router.replace('/onboarding/manual-input')}>
@@ -287,6 +348,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textDecorationLine: 'underline',
   },
+  backLink: {
+    alignSelf: 'flex-start',
+  },
   hiddenWebView: {
     position: 'absolute',
     width: 300,
@@ -307,5 +371,43 @@ const styles = StyleSheet.create({
   resultValue: {
     fontSize: 15,
     fontWeight: '700',
+  },
+  cameraContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  cameraOverlayUi: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 24,
+    gap: 16,
+    alignItems: 'center',
+  },
+  cameraHint: {
+    color: '#fff',
+    fontSize: 13,
+    textAlign: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 8,
+    borderRadius: 8,
+  },
+  cameraCancelArea: {
+    position: 'absolute',
+    top: 48,
+    left: 24,
+  },
+  cameraCancel: {
+    color: '#fff',
+    fontSize: 15,
+  },
+  shutterButton: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: '#fff',
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.4)',
   },
 });
