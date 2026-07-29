@@ -18,6 +18,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<BodyProfileRow | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   useEffect(() => {
     load();
@@ -28,6 +29,7 @@ export default function Profile() {
     setLoadError(null);
     try {
       const session = await ensureSession();
+      setIsAnonymous(session.user.is_anonymous ?? false);
       const latest = await getLatestProfile(session.user.id);
       setProfile(latest);
     } catch (err) {
@@ -108,6 +110,12 @@ export default function Profile() {
       >
         <Text style={styles.buttonText}>Редактировать</Text>
       </Pressable>
+
+      {isAnonymous && (
+        <Pressable onPress={() => router.push('/account')}>
+          <Text style={styles.link}>Привязать email, чтобы не потерять данные при смене телефона</Text>
+        </Pressable>
+      )}
     </ScrollView>
   );
 }
@@ -176,5 +184,12 @@ const styles = StyleSheet.create({
     color: '#c0392b',
     fontSize: 14,
     textAlign: 'center',
+  },
+  link: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 13,
+    textDecorationLine: 'underline',
+    marginTop: 4,
   },
 });
