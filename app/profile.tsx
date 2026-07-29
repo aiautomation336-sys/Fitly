@@ -2,10 +2,9 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BodySilhouette } from '@/components/BodySilhouette';
-import { BodyMeasurementsForm } from '@/components/BodyMeasurementsForm';
 import { BrandSizeFeedbackRow } from '@/components/BrandSizeFeedbackRow';
 import { ensureSession } from '@/lib/auth';
-import { getLatestProfile, updateProfile } from '@/lib/bodyProfiles';
+import { getLatestProfile } from '@/lib/bodyProfiles';
 import { allBrandSizes } from '@/lib/brandSizeCharts';
 import { sizeExplanation } from '@/lib/sizeFormula';
 import { BodyProfileRow } from '@/types/BodyProfile';
@@ -19,9 +18,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<BodyProfileRow | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     load();
@@ -38,34 +34,6 @@ export default function Profile() {
       setLoadError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleSave(values: {
-    heightCm: number;
-    weightKg: number;
-    chestCm: number;
-    waistCm: number;
-    hipsCm: number;
-  }) {
-    if (!profile) return;
-    setSaving(true);
-    setSaveError(null);
-    try {
-      await updateProfile(profile.id, {
-        height_cm: values.heightCm,
-        weight_kg: values.weightKg,
-        chest_cm: values.chestCm,
-        waist_cm: values.waistCm,
-        hips_cm: values.hipsCm,
-        input_method: profile.input_method,
-      });
-      await load();
-      setEditing(false);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -94,30 +62,6 @@ export default function Profile() {
           <Text style={styles.buttonText}>Создать Body ID</Text>
         </Pressable>
       </View>
-    );
-  }
-
-  if (editing) {
-    return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Редактирование</Text>
-        <BodyMeasurementsForm
-          initialValues={{
-            heightCm: String(profile.height_cm),
-            weightKg: String(profile.weight_kg),
-            chestCm: String(profile.chest_cm),
-            waistCm: String(profile.waist_cm),
-            hipsCm: String(profile.hips_cm),
-          }}
-          submitLabel="Сохранить изменения"
-          submitting={saving}
-          submitError={saveError}
-          onSubmit={handleSave}
-        />
-        <Pressable onPress={() => setEditing(false)}>
-          <Text style={styles.link}>Отмена</Text>
-        </Pressable>
-      </ScrollView>
     );
   }
 
@@ -156,7 +100,12 @@ export default function Profile() {
         ))}
       </View>
 
-      <Pressable style={styles.button} onPress={() => setEditing(true)}>
+      <Pressable
+        style={styles.button}
+        onPress={() =>
+          router.push({ pathname: '/onboarding/choose-method', params: { editProfileId: profile.id } })
+        }
+      >
         <Text style={styles.buttonText}>Редактировать</Text>
       </Pressable>
     </ScrollView>
@@ -222,12 +171,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  link: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 4,
-    textDecorationLine: 'underline',
   },
   error: {
     color: '#c0392b',

@@ -1,13 +1,35 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { BodyMeasurementsForm } from '@/components/BodyMeasurementsForm';
 import { ensureSession } from '@/lib/auth';
-import { createProfile } from '@/lib/bodyProfiles';
+import { createProfile, getProfileById, updateProfile } from '@/lib/bodyProfiles';
 
 export default function ManualInput() {
+  const { editProfileId } = useLocalSearchParams<{ editProfileId?: string }>();
+  const [loadingInitial, setLoadingInitial] = useState(!!editProfileId);
+  const [initialValues, setInitialValues] = useState<
+    Partial<Record<'heightCm' | 'weightKg' | 'chestCm' | 'waistCm' | 'hipsCm', string>> | undefined
+  >(undefined);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!editProfileId) return;
+    getProfileById(editProfileId)
+      .then((profile) => {
+        if (!profile) return;
+        setInitialValues({
+          heightCm: String(profile.height_cm),
+          weightKg: String(profile.weight_kg),
+          chestCm: String(profile.chest_cm),
+          waistCm: String(profile.waist_cm),
+          hipsCm: String(profile.hips_cm),
+        });
+      })
+      .catch((err) => setSubmitError(err instanceof Error ? err.message : String(err)))
+      .finally(() => setLoadingInitial(false));
+  }, [editProfileId]);
 
   async function handleSubmit(values: {
     heightCm: number;
@@ -19,6 +41,19 @@ export default function ManualInput() {
     setSubmitting(true);
     setSubmitError(null);
     try {
+      if (editProfileId) {
+        await updateProfile(editProfileId, {
+          height_cm: values.heightCm,
+          weight_kg: values.weightKg,
+          chest_cm: values.chestCm,
+          waist_cm: values.waistCm,
+          hips_cm: values.hipsCm,
+          input_method: 'manual',
+        });
+        router.replace('/profile');
+        return;
+      }
+
       const session = await ensureSession();
       const profile = await createProfile(session.user.id, {
         height_cm: values.heightCm,
@@ -46,16 +81,25 @@ export default function ManualInput() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Pressable onPress={() => router.replace('/onboarding/choose-method')} hitSlop={8} style={styles.backLink}>
+      <Pressable
+        onPress={() => router.replace(editProfileId ? '/profile' : '/onboarding/choose-method')}
+        hitSlop={8}
+        style={styles.backLink}
+      >
         <Text style={styles.link}>← Назад</Text>
       </Pressable>
       <Text style={styles.title}>Твои параметры</Text>
-      <BodyMeasurementsForm
-        submitLabel="Сохранить"
-        submitting={submitting}
-        submitError={submitError}
-        onSubmit={handleSubmit}
-      />
+      {loadingInitial ? (
+        <ActivityIndicator size="large" />
+      ) : (
+        <BodyMeasurementsForm
+          initialValues={initialValues}
+          submitLabel={editProfileId ? 'Сохранить изменения' : 'Сохранить'}
+          submitting={submitting}
+          submitError={submitError}
+          onSubmit={handleSubmit}
+        />
+      )}
     </ScrollView>
   );
 }

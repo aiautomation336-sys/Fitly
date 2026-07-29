@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -14,7 +14,7 @@ import {
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { PoseGuideOverlay } from '@/components/PoseGuideOverlay';
 import { ensureSession } from '@/lib/auth';
-import { createProfile } from '@/lib/bodyProfiles';
+import { createProfile, updateProfile } from '@/lib/bodyProfiles';
 import { BodyMeasurements, measurementsFromLandmarks, NormalizedLandmark } from '@/lib/poseMeasurement';
 import { buildPoseHtml } from '@/lib/poseWebViewHtml';
 
@@ -31,6 +31,7 @@ function validateRange(raw: string, min: number, max: number): number | null {
 }
 
 export default function PhotoScan() {
+  const { editProfileId } = useLocalSearchParams<{ editProfileId?: string }>();
   const [step, setStep] = useState<Step>('input');
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
@@ -138,6 +139,19 @@ export default function PhotoScan() {
     setSaving(true);
     setScanError(null);
     try {
+      if (editProfileId) {
+        await updateProfile(editProfileId, {
+          height_cm: height,
+          weight_kg: weight,
+          chest_cm: measurements.chestCm,
+          waist_cm: measurements.waistCm,
+          hips_cm: measurements.hipsCm,
+          input_method: 'photo',
+        });
+        router.replace('/profile');
+        return;
+      }
+
       const session = await ensureSession();
       const profile = await createProfile(session.user.id, {
         height_cm: height,
@@ -168,17 +182,17 @@ export default function PhotoScan() {
       <View style={styles.cameraContainer}>
         <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing="back">
           <PoseGuideOverlay />
+          <Pressable onPress={() => setStep('input')} hitSlop={8} style={styles.cameraCancelArea}>
+            <Text style={styles.cameraCancel}>Отмена</Text>
+          </Pressable>
+          <View style={styles.cameraOverlayUi}>
+            <Text style={styles.cameraHint}>
+              Встань в полный рост, совместив силуэт с подсказкой. Руки слегка в стороны и вниз —
+              не поднимай до уровня плеч.
+            </Text>
+            <Pressable style={styles.shutterButton} onPress={capturePhoto} />
+          </View>
         </CameraView>
-        <Pressable onPress={() => setStep('input')} hitSlop={8} style={styles.cameraCancelArea}>
-          <Text style={styles.cameraCancel}>Отмена</Text>
-        </Pressable>
-        <View style={styles.cameraOverlayUi}>
-          <Text style={styles.cameraHint}>
-            Встань в полный рост, совместив силуэт с подсказкой. Руки слегка в стороны и вниз —
-            не поднимай до уровня плеч.
-          </Text>
-          <Pressable style={styles.shutterButton} onPress={capturePhoto} />
-        </View>
       </View>
     );
   }
@@ -204,7 +218,9 @@ export default function PhotoScan() {
           <Text style={styles.resultValue}>{measurements.hipsCm} см</Text>
         </View>
         <Pressable style={styles.button} onPress={handleSave} disabled={saving}>
-          <Text style={styles.buttonText}>{saving ? 'Сохраняю…' : 'Сохранить'}</Text>
+          <Text style={styles.buttonText}>
+            {saving ? 'Сохраняю…' : editProfileId ? 'Сохранить изменения' : 'Сохранить'}
+          </Text>
         </Pressable>
         {scanError && <Text style={styles.error}>{scanError}</Text>}
       </View>
@@ -233,7 +249,13 @@ export default function PhotoScan() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Pressable onPress={() => router.replace('/onboarding/choose-method')} hitSlop={8} style={styles.backLink}>
+      <Pressable
+        onPress={() =>
+          router.replace({ pathname: '/onboarding/choose-method', params: { editProfileId } })
+        }
+        hitSlop={8}
+        style={styles.backLink}
+      >
         <Text style={styles.link}>← Назад</Text>
       </Pressable>
       <Text style={styles.title}>Фото-скан</Text>
@@ -272,7 +294,11 @@ export default function PhotoScan() {
       <Pressable style={styles.buttonSecondary} onPress={pickFromLibrary}>
         <Text style={styles.buttonSecondaryText}>Выбрать из галереи</Text>
       </Pressable>
-      <Pressable onPress={() => router.replace('/onboarding/manual-input')}>
+      <Pressable
+        onPress={() =>
+          router.replace({ pathname: '/onboarding/manual-input', params: { editProfileId } })
+        }
+      >
         <Text style={styles.link}>Ввести параметры вручную вместо этого</Text>
       </Pressable>
     </ScrollView>

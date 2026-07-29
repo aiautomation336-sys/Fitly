@@ -1,14 +1,21 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function ChooseMethod() {
+  const { editProfileId } = useLocalSearchParams<{ editProfileId?: string }>();
+
   return (
     <View style={styles.container}>
+      {editProfileId && (
+        <Pressable onPress={() => router.replace('/profile')} hitSlop={8} style={styles.backLink}>
+          <Text style={styles.link}>← Назад</Text>
+        </Pressable>
+      )}
       <Text style={styles.title}>Как введём твои параметры?</Text>
 
       <Pressable
         style={styles.card}
-        onPress={() => router.push('/onboarding/photo-scan')}
+        onPress={() => router.push({ pathname: '/onboarding/photo-scan', params: { editProfileId } })}
       >
         <Text style={styles.cardEmoji}>📷</Text>
         <Text style={styles.cardTitle}>Сфотографироваться</Text>
@@ -17,7 +24,7 @@ export default function ChooseMethod() {
 
       <Pressable
         style={styles.card}
-        onPress={() => router.push('/onboarding/manual-input')}
+        onPress={() => router.push({ pathname: '/onboarding/manual-input', params: { editProfileId } })}
       >
         <Text style={styles.cardEmoji}>✍️</Text>
         <Text style={styles.cardTitle}>Ввести вручную</Text>
@@ -58,5 +65,15 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     fontSize: 13,
     color: '#666',
+  },
+  link: {
+    textAlign: 'center',
+    color: '#666',
+    textDecorationLine: 'underline',
+  },
+  backLink: {
+    position: 'absolute',
+    top: 24,
+    left: 24,
   },
 });

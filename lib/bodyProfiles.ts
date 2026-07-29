@@ -13,6 +13,12 @@ export async function getLatestProfile(userId: string): Promise<BodyProfileRow |
   return data;
 }
 
+export async function getProfileById(id: string): Promise<BodyProfileRow | null> {
+  const { data, error } = await supabase.from('body_profiles').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export type ProfileMeasurements = Pick<
   BodyProfileRow,
   'height_cm' | 'weight_kg' | 'chest_cm' | 'waist_cm' | 'hips_cm' | 'input_method'
