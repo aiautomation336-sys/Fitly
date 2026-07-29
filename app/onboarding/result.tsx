@@ -32,7 +32,7 @@ export default function Result() {
         ))}
       </View>
 
-      <Pressable style={styles.button} onPress={() => router.replace('/profile/index')}>
+      <Pressable style={styles.button} onPress={() => router.replace('/profile')}>
         <Text style={styles.buttonText}>Готово</Text>
       </Pressable>
     </ScrollView>

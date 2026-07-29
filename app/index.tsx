@@ -11,7 +11,7 @@ export default function Home() {
     ensureSession()
       .then(async (session) => {
         const profile = await getLatestProfile(session.user.id);
-        router.replace(profile ? '/profile/index' : '/onboarding/choose-method');
+        router.replace(profile ? '/profile' : '/onboarding/choose-method');
       })
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
