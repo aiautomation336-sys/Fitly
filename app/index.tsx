@@ -2,13 +2,17 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { ensureSession } from '@/lib/auth';
+import { getLatestProfile } from '@/lib/bodyProfiles';
 
 export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     ensureSession()
-      .then(() => router.replace('/onboarding/choose-method'))
+      .then(async (session) => {
+        const profile = await getLatestProfile(session.user.id);
+        router.replace(profile ? '/profile/index' : '/onboarding/choose-method');
+      })
       .catch((err) => setError(err instanceof Error ? err.message : String(err)));
   }, []);
 

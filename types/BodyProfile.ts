@@ -1,13 +1,13 @@
 export type InputMethod = 'manual' | 'photo';
 
-export type BodyProfile = {
+export type BodyProfileRow = {
   id: string;
-  userId: string;
-  heightCm: number;
-  weightKg: number;
-  chestCm: number;
-  waistCm: number;
-  hipsCm: number;
-  inputMethod: InputMethod;
-  updatedAt: string;
+  user_id: string;
+  height_cm: number;
+  weight_kg: number;
+  chest_cm: number;
+  waist_cm: number;
+  hips_cm: number;
+  input_method: InputMethod;
+  updated_at: string;
 };

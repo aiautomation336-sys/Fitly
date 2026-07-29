@@ -1,5 +1,5 @@
-import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BodySilhouette } from '@/components/BodySilhouette';
 import { allBrandSizes } from '@/lib/brandSizeCharts';
 import { sizeExplanation } from '@/lib/sizeFormula';
@@ -31,6 +31,10 @@ export default function Result() {
           </View>
         ))}
       </View>
+
+      <Pressable style={styles.button} onPress={() => router.replace('/profile/index')}>
+        <Text style={styles.buttonText}>Готово</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -76,5 +80,18 @@ const styles = StyleSheet.create({
   brandSize: {
     fontSize: 15,
     fontWeight: '700',
+  },
+  button: {
+    backgroundColor: '#111',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
