@@ -16,7 +16,7 @@ import { BodyMeasurements, measurementsFromLandmarks, NormalizedLandmark } from 
 import { buildPoseHtml } from '@/lib/poseWebViewHtml';
 import { supabase } from '@/lib/supabase';
 
-type Step = 'input' | 'processing' | 'review' | 'saved';
+type Step = 'input' | 'processing' | 'review';
 
 type PoseResultMessage =
   | { type: 'result'; landmarks: NormalizedLandmark[]; imageWidth: number; imageHeight: number }
@@ -118,21 +118,19 @@ export default function PhotoScan() {
         input_method: 'photo',
       });
       if (error) throw error;
-      setStep('saved');
+      router.replace({
+        pathname: '/onboarding/result',
+        params: {
+          chestCm: String(measurements.chestCm),
+          waistCm: String(measurements.waistCm),
+          hipsCm: String(measurements.hipsCm),
+        },
+      });
     } catch (err) {
       setScanError(err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }
-  }
-
-  if (step === 'saved') {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Сохранено ✅</Text>
-        <Text style={styles.subtitle}>Твой Body ID создан по фото.</Text>
-      </View>
-    );
   }
 
   if (step === 'review' && measurements) {

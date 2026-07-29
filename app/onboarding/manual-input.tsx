@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ensureSession } from '@/lib/auth';
@@ -31,7 +32,6 @@ export default function ManualInput() {
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   function validate(): Record<FieldKey, number> | null {
     const nextErrors: Partial<Record<FieldKey, string>> = {};
@@ -72,21 +72,19 @@ export default function ManualInput() {
         input_method: 'manual',
       });
       if (error) throw error;
-      setSaved(true);
+      router.replace({
+        pathname: '/onboarding/result',
+        params: {
+          chestCm: String(parsed.chestCm),
+          waistCm: String(parsed.waistCm),
+          hipsCm: String(parsed.hipsCm),
+        },
+      });
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
       setSubmitting(false);
     }
-  }
-
-  if (saved) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Сохранено ✅</Text>
-        <Text style={styles.subtitle}>Твой Body ID создан.</Text>
-      </View>
-    );
   }
 
   return (
@@ -128,11 +126,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
   },
   fieldGroup: {
     gap: 4,
